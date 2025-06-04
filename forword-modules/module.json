@@ -1,0 +1,15 @@
+{
+  "name": "B站 UP 主视频合集",
+  "description": "输入 UP 主的 UID，查看其所有视频",
+  "parameters": [
+    {
+      "name": "uid",
+      "type": "text",
+      "label": "请输入 UP 主的 UID",
+      "placeholder": "例如：672328094"
+    }
+  ],
+  "link": "https://rsshub.app/bilibili/user/video/{uid}",
+  "icon": "https://www.bilibili.com/favicon.ico",
+  "color": "#00A1D6"
+}
