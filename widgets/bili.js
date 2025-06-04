@@ -1,58 +1,32 @@
 var WidgetMetadata = {
-  id: "nori.bilibili.user.videos",
-  title: "B站用户视频",
-  description: "通过 UID 获取 UP 主视频",
-  author: "Nori",
-  site: "https://space.bilibili.com/",
+  id: "nori.bili.module",
+  title: "B站视频",
+  description: "通过UID获取UP主视频",
   version: "1.0.0",
-  requiredVersion: "0.0.1",
-  modules: [
-    {
-      title: "UP主视频列表",
-      description: "通过 UID 拉取视频",
-      functionName: "fetchBilibiliVideos",
-      params: [
-        {
-          name: "uid",
-          title: "UP 主 UID",
-          type: "input",
-          description: "填写 B站 UP 主 UID",
-          value: "672328094"
-        }
-      ]
-    }
-  ]
+  requiredVersion: "0.0.1", // ✅ 建议补上
+  author: "nori5555"
 };
 
-async function fetchBilibiliVideos(params = {}) {
-  try {
-    const uid = params.uid || "672328094";
-    const url = `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=30&pn=1`;
-
-    const response = await Widget.http.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Referer": `https://space.bilibili.com/${uid}`
+var widget = {
+  async run(params = {}) {
+    return [
+      {
+        id: "bilibili.1",
+        type: "url",
+        title: "示例视频",
+        posterPath: "https://i0.hdslb.com/bfs/archive/00.jpg",
+        backdropPath: "https://i0.hdslb.com/bfs/archive/00.jpg",
+        releaseDate: "2024-01-01",
+        mediaType: "video",
+        rating: "5",
+        genreTitle: "搞笑",
+        duration: 123,
+        durationText: "02:03",
+        previewUrl: "",
+        videoUrl: "https://www.bilibili.com/video/example",
+        link: "https://www.bilibili.com/video/example",
+        description: "这是一个示例视频描述"
       }
-    });
-
-    const data = response.data;
-    if (!data || !data.data || !data.data.list || !data.data.list.vlist) {
-      throw new Error("未获取到视频数据");
-    }
-
-    return data.data.list.vlist.map(video => ({
-      id: video.aid.toString(),
-      type: "url",
-      title: video.title,
-      posterPath: video.pic,
-      releaseDate: video.created ? new Date(video.created * 1000).toISOString().split('T')[0] : "",
-      mediaType: "tv",
-      link: `https://www.bilibili.com/video/av${video.aid}`,
-      description: video.description
-    }));
-  } catch (error) {
-    console.error("处理失败:", error);
-    throw error;
+    ];
   }
-}
+};
