@@ -1,0 +1,16 @@
+{
+  "title": "Nori 的 Forward 模块",
+  "description": "B站模块集",
+  "icon": "https://raw.githubusercontent.com/nori5555/nori-emby/main/b-forword/icon.png",
+  "widgets": [
+    {
+      "id": "nori.bilibili.user.videos",
+      "title": "B站用户视频",
+      "description": "通过 UID 获取 UP 主发布的视频",
+      "requiredVersion": "0.0.1",
+      "version": "1.0.0",
+      "author": "Nori",
+      "url": "https://raw.githubusercontent.com/nori5555/b-forward/refs/heads/main/forword-modules/bili.js"
+    }
+  ]
+}
