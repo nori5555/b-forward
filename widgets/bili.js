@@ -2,7 +2,7 @@ var WidgetMetadata = {
   id: "up.bilibili.videos",
   title: "B站 UP 主视频",
   description: "抓取指定B站UP主的全部投稿",
-  author: "你自己的名字",
+  author: "111",
   site: "https://www.bilibili.com/",
   version: "1.0.0",
   requiredVersion: "0.0.1",
@@ -19,7 +19,7 @@ var WidgetMetadata = {
           name: "mid",
           title: "UP主UID",
           type: "input",
-          placeholder: "例如672328094",
+          placeholder: "672328094",
           required: true
         }
       ]
