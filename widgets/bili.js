@@ -91,3 +91,7 @@ function fixPicUrl(url) {
   if (!url.startsWith("http")) return "https://i0.hdslb.com" + (url.startsWith("/") ? "" : "/") + url;
   return url;
 }
+module.exports = {
+  WidgetMetadata,
+  loadUpVideos
+};
