@@ -1,93 +1,38 @@
-var WidgetMetadata = {
-  id: "up.bilibili.videos",
-  title: "B站 UP 主视频",
-  description: "抓取指定B站UP主的全部投稿",
-  author: "111",
-  site: "https://www.bilibili.com/",
+WidgetMetadata = {
+  id: "bilibili_user",
+  title: "B站用户视频",
   version: "1.0.0",
-  requiredVersion: "0.0.1",
-  detailCacheDuration: 300,
+  author: "nori5555",
+  desc: "展示指定B站用户的投稿视频",
   modules: [
     {
-      title: "UP主投稿",
-      description: "抓取该UP主全部视频",
-      requiresWebView: false,
-      functionName: "loadUpVideos",
+      title: "UP主投稿视频",
+      functionName: "loadUserVideos",
       cacheDuration: 3600,
+      icon: "https://www.bilibili.com/favicon.ico",
       params: [
         {
-          name: "mid",
-          title: "UP主UID",
-          type: "input",
-          placeholder: "672328094",
-          required: true
+          name: "uid",
+          title: "B站用户UID",
+          type: "string",
+          required: true,
+          placeholder: "请输入UID，例如 7784568"
         }
       ]
     }
   ]
-};
-async function loadUpVideos(params = {}) {
-  const mid = params.mid;
-  if (!mid) throw new Error("缺少UP主UID");
-
-  const PAGE_SIZE = 30;
-  let page = 1;
-  let hasMore = true;
-  const allVideos = [];
-
-  while (hasMore) {
-    const url = `https://api.bilibili.com/x/space/arc/search?mid=${mid}&pn=${page}&ps=${PAGE_SIZE}`;
-    try {
-      const response = await Widget.http.get(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          Referer: "https://www.bilibili.com/",
-        }
-      });
-
-      const data = response.data;
-      if (data.code !== 0) throw new Error(`B站接口错误：${data.message}`);
-
-      const vlist = data.data.list.vlist;
-      if (!vlist.length) break;
-
-      const videos = vlist.map((v, index) => ({
-        id: `${v.bvid}-${index}`,
-        type: "url",
-        title: v.title,
-        description: `${formatDate(v.created)} · 播放 ${parsePlayCount(v.play)}`,
-        link: `https://www.bilibili.com/video/${v.bvid}`,
-        imgSrc: fixPicUrl(v.pic),
-        backdropPath: fixPicUrl(v.pic),
-        mediaType: "movie"
-      }));
-
-      allVideos.push(...videos);
-      page++;
-    } catch (err) {
-      console.error("抓取失败：", err.message);
-      throw err;
-    }
-  }
-
-  return allVideos;
-}
-#辅助函数
-function parsePlayCount(play) {
-  if (typeof play === 'number') return play;
-  if (play.includes("万")) return parseFloat(play) * 10000;
-  if (play.includes("亿")) return parseFloat(play) * 100000000;
-  return parseInt(play) || 0;
 }
 
-function formatDate(ts) {
-  const date = new Date(ts * 1000);
-  return date.toISOString().split("T")[0];
-}
+async function loadUserVideos(params) {
+  const uid = params.uid || "7784568";  // 默认UID（哔哩哔哩科技）
+  const url = `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=20&pn=1`;
+  const res = await $http.get(url);
+  const list = res.data.data.list.vlist || [];
 
-function fixPicUrl(url) {
-  if (!url) return "";
-  if (url.startsWith("//")) return "https:" + url;
-  if (!url.startsWith("http")) return "https://i0.hdslb.com" + (url.startsWith("/") ? "" : "/") + url;
-  return url;
+  return list.map(video => ({
+    title: video.title,
+    description: `${video.author} · ${video.play}次观看`,
+    icon: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
+    url: "https://www.bilibili.com/video/" + video.bvid
+  }));
 }
