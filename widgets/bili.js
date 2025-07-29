@@ -144,23 +144,58 @@ async function loadUserVideos(params) {
 async function getAllUserVideos(uid) {
   const allVideos = [];
   let page = 1;
-  const pageSize = 50;
+  const pageSize = 30; // 减少页面大小
   let hasMore = true;
   
-  while (hasMore && page <= 20) { // 最多获取20页，防止无限循环
+  while (hasMore && page <= 10) { // 减少最大页数
     try {
-      const url = `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=${pageSize}&pn=${page}`;
+      const url = `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=${pageSize}&pn=${page}&order=pubdate&tid=0&keyword=`;
       
       const res = await $http.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://www.bilibili.com/',
-          'Origin': 'https://www.bilibili.com'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': `https://space.bilibili.com/${uid}/video`,
+          'Origin': 'https://space.bilibili.com',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-site'
         }
       });
       
-      if (!res.data || res.data.code !== 0) {
-        console.error(`第${page}页获取失败:`, res.data?.message);
+      if (!res.data) {
+        console.error(`第${page}页获取失败: 无响应数据`);
+        break;
+      }
+      
+      if (res.data.code === -412) {
+        console.error(`第${page}页获取失败: 请求被拦截，需要验证`);
+        break;
+      }
+      
+      if (res.data.code === -799) {
+        console.error(`第${page}页获取失败: 请求过于频繁，请稍后再试`);
+        // 等待更长时间后重试
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (page === 1) {
+          // 第一页失败时尝试不同的API
+          const fallbackResult = await tryFallbackAPI(uid);
+          if (fallbackResult && fallbackResult.length > 0) {
+            return fallbackResult;
+          }
+        }
+        break;
+      }
+      
+      if (res.data.code !== 0) {
+        console.error(`第${page}页获取失败:`, res.data?.message || '未知错误');
         break;
       }
       
@@ -173,17 +208,66 @@ async function getAllUserVideos(uid) {
       allVideos.push(...pageData);
       page++;
       
-      // 添加延迟避免请求过快
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // 增加延迟避免请求过快
+      await new Promise(resolve => setTimeout(resolve, 800));
       
     } catch (error) {
-      console.error(`获取第${page}页视频失败:`, error);
+      console.error(`获取第${page}页视频失败:`, error.message);
+      // 如果是第一页就失败，尝试备用方案
+      if (page === 1) {
+        const fallbackResult = await tryFallbackAPI(uid);
+        if (fallbackResult && fallbackResult.length > 0) {
+          return fallbackResult;
+        }
+      }
       break;
     }
   }
   
   console.log(`共获取到 ${allVideos.length} 个视频`);
   return allVideos;
+}
+
+// 备用API方案
+async function tryFallbackAPI(uid) {
+  try {
+    console.log('尝试备用API...');
+    
+    // 方案1: 使用不同的API端点
+    const url1 = `https://api.bilibili.com/x/space/wbi/arc/search?mid=${uid}&ps=30&pn=1`;
+    const res1 = await $http.get(url1, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+        'Referer': 'https://m.bilibili.com/',
+        'Origin': 'https://m.bilibili.com'
+      }
+    });
+    
+    if (res1.data && res1.data.code === 0 && res1.data.data?.list?.vlist) {
+      console.log('备用API成功');
+      return res1.data.data.list.vlist.slice(0, 20); // 限制数量
+    }
+    
+    // 方案2: 使用移动端API
+    const url2 = `https://app.bilibili.com/x/v2/space/arc?vmid=${uid}&ps=20&pn=1`;
+    const res2 = await $http.get(url2, {
+      headers: {
+        'User-Agent': 'bili-universal/10770 CFNetwork/1240.0.4 Darwin/20.6.0',
+        'App-Key': 'android'
+      }
+    });
+    
+    if (res2.data && res2.data.code === 0 && res2.data.data?.list?.vlist) {
+      console.log('移动端API成功');
+      return res2.data.data.list.vlist.slice(0, 20);
+    }
+    
+    return [];
+    
+  } catch (error) {
+    console.error('备用API也失败:', error.message);
+    return [];
+  }
 }
 
 // 处理视频播放链接

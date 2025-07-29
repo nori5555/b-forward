@@ -1,0 +1,23 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "forward 测试",
+  "main": "test_bili.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nori5555/forword.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nori5555/forword/issues"
+  },
+  "homepage": "https://github.com/nori5555/forword#readme",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
