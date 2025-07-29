@@ -1,45 +1,41 @@
-WidgetMetadata = {
+// Forward Widget 标准格式的 B站视频模块
+const WidgetMetadata = {
   id: "bilibili_user_videos",
   title: "B站用户视频播放器",
   version: "2.0.0",
   author: "nori5555",
   desc: "获取B站用户全部视频并支持直接播放",
-  modules: [
+  functionName: "loadUserVideos",
+  cacheDuration: 1800, // 30分钟缓存
+  icon: "https://www.bilibili.com/favicon.ico",
+  params: [
     {
-      title: "UP主视频播放",
-      functionName: "loadUserVideos",
-      cacheDuration: 1800, // 30分钟缓存
-      icon: "https://www.bilibili.com/favicon.ico",
-      params: [
-        {
-          name: "uid",
-          title: "B站用户UID",
-          type: "string",
-          required: true,
-          placeholder: "请输入UID，例如 7784568"
-        },
-        {
-          name: "quality",
-          title: "视频质量",
-          type: "select",
-          required: false,
-          default: "720P",
-          options: [
-            { value: "1080P", text: "1080P高清" },
-            { value: "720P", text: "720P高清" },
-            { value: "480P", text: "480P标清" },
-            { value: "360P", text: "360P流畅" }
-          ]
-        },
-        {
-          name: "proxy",
-          title: "使用代理播放",
-          type: "boolean",
-          required: false,
-          default: true,
-          description: "启用后通过代理服务器播放，提高兼容性"
-        }
+      name: "uid",
+      title: "B站用户UID",
+      type: "string",
+      required: true,
+      placeholder: "请输入UID，例如 7784568"
+    },
+    {
+      name: "quality",
+      title: "视频质量",
+      type: "select",
+      required: false,
+      default: "720P",
+      options: [
+        { value: "1080P", text: "1080P高清" },
+        { value: "720P", text: "720P高清" },
+        { value: "480P", text: "480P标清" },
+        { value: "360P", text: "360P流畅" }
       ]
+    },
+    {
+      name: "proxy",
+      title: "使用代理播放",
+      type: "boolean",
+      required: false,
+      default: true,
+      description: "启用后通过代理服务器播放，提高兼容性"
     }
   ]
 }
@@ -151,7 +147,7 @@ async function getAllUserVideos(uid) {
     try {
       const url = `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=${pageSize}&pn=${page}`;
       
-      const res = await $http.get(url, {
+      const res = await Widget.http.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Referer': 'https://www.bilibili.com/',
@@ -258,7 +254,7 @@ async function getVideoPlayUrl(bvid, quality, useProxy) {
   try {
     // 首先获取视频信息
     const infoUrl = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
-    const infoRes = await $http.get(infoUrl, {
+    const infoRes = await Widget.http.get(infoUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://www.bilibili.com/'
@@ -308,7 +304,7 @@ async function getPlayUrlMethod1(aid, cid, quality) {
   try {
     const playUrl = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&qn=${getQualityCode(quality)}&type=&otype=json&platform=html5&high_quality=1`;
     
-    const playRes = await $http.get(playUrl, {
+    const playRes = await Widget.http.get(playUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': `https://www.bilibili.com/video/av${aid}`
@@ -339,7 +335,7 @@ async function getPlayUrlMethod2(aid, cid, quality) {
   try {
     const playUrl = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&qn=${getQualityCode(quality)}&platform=android&mobi_app=android`;
     
-    const playRes = await $http.get(playUrl, {
+    const playRes = await Widget.http.get(playUrl, {
       headers: {
         'User-Agent': 'bili-universal/10770 CFNetwork/1240.0.4 Darwin/20.6.0',
         'Referer': 'https://www.bilibili.com/'
@@ -385,7 +381,7 @@ async function tryProxyUrls(playData) {
       const proxiedUrl = proxy + encodeURIComponent(playData.url);
       
       // 测试代理是否可用
-      const testRes = await $http.head(proxiedUrl, {
+      const testRes = await Widget.http.head(proxiedUrl, {
         timeout: 5000,
         headers: playData.headers
       });
@@ -454,3 +450,9 @@ function formatDate(timestamp) {
     return `${years}年前`;
   }
 }
+
+// Forward Widget 标准模块导出
+module.exports = {
+  metadata: WidgetMetadata,
+  loadUserVideos: loadUserVideos
+};
