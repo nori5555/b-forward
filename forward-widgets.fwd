@@ -1,16 +1,25 @@
 {
-“title”: “Nori 的 Forward 模块”,
-“description”: “B站模块集”,
-“icon”: “https://raw.githubusercontent.com/nori5555/nori-emby/main/b-forword/icon.png”,
-“widgets”: [
-{
-“id”: “bilibili_user_videos”,
-“title”: “B站用户视频”,
-“description”: “通过 UID 获取 UP 主发布的视频”,
-“requiredVersion”: “0.0.1”,
-“version”: “1.0.0”,
-“author”: “Nori”,
-“url”: “https://raw.githubusercontent.com/nori5555/b-forward/main/widgets/bili.js”
-}
-]
+  "title": "NORI Widgets",
+  "description": "B站视频播放器和影视榜单聚合工具集",
+  "icon": "https://raw.githubusercontent.com/nori5555/ForwardWidgets/main/fporn.png",
+  "widgets": [
+    {
+      "id": "forward.combined.media.lists",
+      "title": "影视榜单",
+      "description": "聚合豆瓣、TMDB、IMDB和Bangumi的影视动画榜单",
+      "requiredVersion": "0.0.1",
+      "version": "1.2.7",
+      "author": "阿米诺斯",
+      "url": "https://raw.githubusercontent.com/pack1r/ForwardWidgets/refs/heads/main/widgets/combined.js"
+    },
+    {
+      "id": "bilibili_user_videos",
+      "title": "B站用户视频播放器",
+      "description": "获取B站用户全部视频并支持在第三方app中直接播放，支持多种画质和智能缓存",
+      "requiredVersion": "0.0.1",
+      "version": "2.0.0",
+      "author": "Nori",
+      "url": "https://raw.githubusercontent.com/nori5555/b-forward/main/widgets/bili.js"
+    }
+  ]
 }
