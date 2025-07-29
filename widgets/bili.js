@@ -1,41 +1,53 @@
-// Forward Widget 标准格式的 B站视频模块
-const WidgetMetadata = {
+// ForwardWidget 官方标准格式的 B站视频模块
+var WidgetMetadata = {
   id: "bilibili_user_videos",
   title: "B站用户视频播放器",
   version: "2.0.0",
+  requiredVersion: "0.0.1",
+  description: "获取B站用户全部视频并支持直接播放",
   author: "nori5555",
-  desc: "获取B站用户全部视频并支持直接播放",
-  functionName: "loadUserVideos",
-  cacheDuration: 1800, // 30分钟缓存
-  icon: "https://www.bilibili.com/favicon.ico",
-  params: [
+  site: "https://github.com/nori5555/b-forward",
+  detailCacheDuration: 60,
+  modules: [
     {
-      name: "uid",
-      title: "B站用户UID",
-      type: "string",
-      required: true,
-      placeholder: "请输入UID，例如 7784568"
-    },
-    {
-      name: "quality",
-      title: "视频质量",
-      type: "select",
-      required: false,
-      default: "720P",
-      options: [
-        { value: "1080P", text: "1080P高清" },
-        { value: "720P", text: "720P高清" },
-        { value: "480P", text: "480P标清" },
-        { value: "360P", text: "360P流畅" }
+      title: "UP主视频播放",
+      description: "通过 UID 获取 UP 主发布的视频",
+      requiresWebView: false,
+      functionName: "loadUserVideos",
+      sectionMode: false,
+      cacheDuration: 1800, // 30分钟缓存
+      params: [
+        {
+          name: "uid",
+          title: "B站用户UID",
+          type: "input",
+          description: "请输入UID，例如 7784568",
+          value: "7784568"
+        },
+        {
+          name: "quality",
+          title: "视频质量",
+          type: "enumeration",
+          value: "720P",
+          enumOptions: [
+            { title: "1080P高清", value: "1080P" },
+            { title: "720P高清", value: "720P" },
+            { title: "480P标清", value: "480P" },
+            { title: "360P流畅", value: "360P" }
+          ]
+        },
+        {
+          name: "proxy",
+          title: "使用代理播放",
+          type: "enumeration",
+          value: "true",
+          description: "启用后通过代理服务器播放，提高兼容性",
+          enumOptions: [
+            { title: "启用", value: "true" },
+            { title: "禁用", value: "false" }
+          ]
+        }
       ]
-    },
-    {
-      name: "proxy",
-      title: "使用代理播放",
-      type: "boolean",
-      required: false,
-      default: true,
-      description: "启用后通过代理服务器播放，提高兼容性"
     }
   ]
 }
@@ -87,11 +99,11 @@ const PROXY_SERVERS = [
   // 可以添加更多代理服务器
 ];
 
-async function loadUserVideos(params) {
+async function loadUserVideos(params = {}) {
   try {
     const uid = params.uid || "7784568";
     const quality = params.quality || "720P";
-    const useProxy = params.proxy !== false;
+    const useProxy = params.proxy === "true" || params.proxy === true;
     
     // 检查缓存
     const cacheKey = `user_videos_${uid}_${quality}`;
@@ -107,13 +119,15 @@ async function loadUserVideos(params) {
     const allVideos = await getAllUserVideos(uid);
     
     if (allVideos.length === 0) {
-      return [{
-        title: "未找到视频",
-        description: "该用户暂无投稿视频或UID不存在",
-        icon: "https://www.bilibili.com/favicon.ico",
-        url: `https://space.bilibili.com/${uid}`,
-        type: "link"
-      }];
+          return [{
+      id: "no_videos",
+      type: "url",
+      title: "未找到视频",
+      description: "该用户暂无投稿视频或UID不存在",
+      posterPath: "https://www.bilibili.com/favicon.ico",
+      link: `https://space.bilibili.com/${uid}`,
+      mediaType: "tv"
+    }];
     }
     
     // 处理视频播放链接
@@ -127,11 +141,13 @@ async function loadUserVideos(params) {
   } catch (error) {
     console.error('B站视频获取失败:', error);
     return [{
+      id: "error",
+      type: "url",
       title: "获取失败",
       description: `错误: ${error.message}`,
-      icon: "https://www.bilibili.com/favicon.ico",
-      url: "https://www.bilibili.com",
-      type: "link"
+      posterPath: "https://www.bilibili.com/favicon.ico",
+      link: "https://www.bilibili.com",
+      mediaType: "tv"
     }];
   }
 }
@@ -193,18 +209,25 @@ async function processVideosForPlayback(videos, quality, useProxy) {
       const playData = await getVideoPlayUrl(video.bvid, quality, useProxy);
       
       const videoItem = {
+        id: video.bvid,
+        type: "url",
         title: video.title,
+        posterPath: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
+        backdropPath: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
+        releaseDate: formatDate(video.created),
+        mediaType: "tv",
+        duration: video.length,
+        durationText: formatDuration(video.length),
+        link: `https://www.bilibili.com/video/${video.bvid}`,
         description: `${video.author} · ${formatViewCount(video.play)}次观看 · ${formatDate(video.created)}`,
-        icon: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
-        duration: formatDuration(video.length),
         bvid: video.bvid,
         quality: quality,
         originalUrl: `https://www.bilibili.com/video/${video.bvid}`
       };
       
-      if (playData && playData.url) {
-        videoItem.url = playData.url;
-        videoItem.type = "video";
+              if (playData && playData.url) {
+        videoItem.videoUrl = playData.url;
+        videoItem.type = "url";
         videoItem.headers = playData.headers;
         videoItem.proxy = useProxy;
         
@@ -214,8 +237,8 @@ async function processVideosForPlayback(videos, quality, useProxy) {
         }
       } else {
         // 降级为链接模式
-        videoItem.url = videoItem.originalUrl;
-        videoItem.type = "link";
+        videoItem.link = videoItem.originalUrl;
+        videoItem.type = "url";
       }
       
       processed.push(videoItem);
@@ -224,12 +247,17 @@ async function processVideosForPlayback(videos, quality, useProxy) {
       console.error(`处理视频 ${video.bvid} 失败:`, error);
       // 降级为链接模式
       processed.push({
+        id: video.bvid,
+        type: "url",
         title: video.title,
+        posterPath: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
+        backdropPath: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
+        releaseDate: formatDate(video.created),
+        mediaType: "tv",
+        duration: video.length,
+        durationText: formatDuration(video.length),
+        link: `https://www.bilibili.com/video/${video.bvid}`,
         description: `${video.author} · ${formatViewCount(video.play)}次观看 · ${formatDate(video.created)}`,
-        icon: video.pic.startsWith("http") ? video.pic : "https:" + video.pic,
-        url: `https://www.bilibili.com/video/${video.bvid}`,
-        type: "link",
-        duration: formatDuration(video.length),
         bvid: video.bvid
       });
     }
@@ -238,11 +266,13 @@ async function processVideosForPlayback(videos, quality, useProxy) {
   // 如果还有更多视频，添加"查看更多"选项
   if (videos.length > 30) {
     processed.push({
+      id: "more_videos",
+      type: "url",
       title: `还有 ${videos.length - 30} 个视频...`,
       description: "点击查看用户主页或调整参数获取更多",
-      icon: "https://www.bilibili.com/favicon.ico",
-      url: `https://space.bilibili.com/${videos[0]?.mid || ''}`,
-      type: "link"
+      posterPath: "https://www.bilibili.com/favicon.ico",
+      link: `https://space.bilibili.com/${videos[0]?.mid || ''}`,
+      mediaType: "tv"
     });
   }
   
